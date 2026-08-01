@@ -148,8 +148,9 @@ def admin_secrets():
 # VULN: Server-Side Template Injection
 @app.route('/render', methods=['POST'])
 def render():
-    template = request.get_json().get('template', 'Hello {{ name }}')
-    name = request.get_json().get('name', 'World')
+    data = request.get_json() or {}
+    template = data.get('template', 'Hello {{ name }}')
+    name = data.get('name', 'World')
     
     # No sanitization — SSTI!
     try:

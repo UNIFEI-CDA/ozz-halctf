@@ -1,0 +1,21 @@
+# Ignore large/unnecessary files from Docker build context
+.git
+.github
+*.md
+!README.md
+docs/
+memory/
+reports/
+tests/
+assets/
+*.png
+*.svg
+*.patch
+*.ps1
+*.ipynb
+universe/
+models/
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache

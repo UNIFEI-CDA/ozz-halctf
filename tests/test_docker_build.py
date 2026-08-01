@@ -28,15 +28,15 @@ class TestDockerBuild(unittest.TestCase):
             "Dockerfile deve copiar o diretório scripts/ para incluir o hf_server.py"
         )
 
-    def test_entrypoint_has_cuda_detection_and_fallback(self):
-        """Verifica se o entrypoint.sh possui lógica de detecção de GPU e fallback"""
+    def test_entrypoint_has_fallback_to_hf_server(self):
+        """Verifica se o entrypoint.sh possui fallback para iniciar hf_server.py"""
         self.assertTrue(os.path.exists(self.entrypoint_path), "scripts/entrypoint.sh não encontrado")
         with open(self.entrypoint_path, "r", encoding="utf-8") as f:
             content = f.read()
-        self.assertTrue(
-            "hf_server.py" in content or "python" in content,
-            "entrypoint.sh deve possuir suporte para executar o hf_server.py"
-        )
+        self.assertIn("python /app/scripts/hf_server.py", content,
+                      "entrypoint.sh deve possuir fallback para iniciar hf_server.py")
+        self.assertIn("vllm.entrypoints.openai.api_server", content,
+                      "entrypoint.sh deve iniciar o servidor vLLM por padrão")
 
 if __name__ == "__main__":
     unittest.main()

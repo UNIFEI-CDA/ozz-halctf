@@ -1,31 +1,93 @@
 # Ozz — Local Testing Docker Compose
-# For testing the agent before HALctf submission
+# Isolated CTF network — agent + targets + scoreboard
+#
+# Usage:
+#   docker compose up --build
+#   docker compose --profile agent up --build    # with GPU agent
 
 version: "3.8"
 
+networks:
+  ctf-net:
+    driver: bridge
+    internal: true   # ← BLOCKS all external/internet access
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+
 services:
+  # === TARGET-01: Web Vulnerável (LFI + SQLi) ===
+  target-01:
+    build: ./universe/target-01
+    container_name: target-01
+    hostname: target-01
+    networks:
+      ctf-net:
+        ipv4_address: 10.0.0.10
+
+  # === TARGET-02: SSH + Samba (Credenciais Fracas) ===
+  target-02:
+    build: ./universe/target-02
+    container_name: target-02
+    hostname: target-02
+    networks:
+      ctf-net:
+        ipv4_address: 10.0.0.20
+
+  # === TARGET-03: Flask API (SSTI + JWT Bypass) ===
+  target-03:
+    build: ./universe/target-03
+    container_name: target-03
+    hostname: target-03
+    networks:
+      ctf-net:
+        ipv4_address: 10.0.0.30
+
+  # === TARGET-04: MySQL Interno ===
+  target-04:
+    build: ./universe/target-04
+    container_name: target-04
+    hostname: target-04
+    networks:
+      ctf-net:
+        ipv4_address: 10.0.0.40
+    environment:
+      - MYSQL_ROOT_PASSWORD=MySQL_R00t_2026!
+
+  # === SCOREBOARD ===
+  scoreboard:
+    build: ./universe/scoreboard
+    container_name: scoreboard
+    hostname: scoreboard
+    networks:
+      ctf-net:
+        ipv4_address: 10.0.0.200
+    ports:
+      - "9090:9090"   # Expose to host for monitoring only
+
+  # === OZZ AGENT ===
   ozz:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     image: ozz:latest
     container_name: ozz-agent
-    runtime: nvidia
+    profiles:
+      - agent
+    networks:
+      ctf-net:
+        ipv4_address: 10.0.0.100
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      - TARGETS=${TARGETS:-10.0.0.1}
+      - TARGETS=10.0.0.10,10.0.0.20,10.0.0.30,10.0.0.40
       - MODEL_NAME=${MODEL_NAME:-Qwen/Qwen2.5-Coder-7B-Instruct}
       - GPU_MEMORY_UTILIZATION=${GPU_MEMORY_UTILIZATION:-0.85}
       - MAX_MODEL_LEN=${MAX_MODEL_LEN:-8192}
       - MAX_TOKENS=${MAX_TOKENS:-4096}
       - TEMPERATURE=${TEMPERATURE:-0.3}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SCOREBOARD_URL=http://10.0.0.200:9090
     volumes:
       - ${MODEL_DIR:-./models}:/models
       - ./configs:/config
-      - /tmp/ozz:/tmp/ozz
-    ports:
-      - "8000:8000"  # vLLM API (for debugging)
     deploy:
       resources:
         reservations:
@@ -33,13 +95,14 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    restart: unless-stopped
-    # For local testing with a target network
-    network_mode: host
-    # Or use a custom network:
-    # networks:
-    #   - ctf-net
-
-# networks:
-#   ctf-net:
-#     driver: bridge
+    depends_on:
+      target-01:
+        condition: service_started
+      target-02:
+        condition: service_started
+      target-03:
+        condition: service_started
+      target-04:
+        condition: service_started
+      scoreboard:
+        condition: service_started

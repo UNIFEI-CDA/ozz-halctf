@@ -1,0 +1,32 @@
+{
+  "pipeline": "OZZ + RAPTOR v6",
+  "timestamp": "2026-07-29T12:30:00",
+  "model": "Qwen2.5-Coder-0.5B-Instruct",
+  "platform": "Kaggle GPU",
+  "runtime_seconds": 180,
+  "raptor": {
+    "tool": "Semgrep (auto + OWASP Top 10 + Security Audit)",
+    "total_findings": 12,
+    "by_severity": {"critical": 8, "high": 4},
+    "findings": [
+      {"target": "target-01-web", "rule": "dockerfile.security.missing-user", "severity": "critical", "file": "Dockerfile", "line": 16},
+      {"target": "target-01-web", "rule": "php.lang.security.injection.tainted-sql-string", "severity": "critical", "file": "index.php", "line": 53},
+      {"target": "target-01-web", "rule": "php.lang.security.injection.echoed-request", "severity": "critical", "file": "index.php", "line": 58},
+      {"target": "target-01-web", "rule": "php.lang.security.injection.tainted-filename", "severity": "high", "file": "index.php", "line": 107},
+      {"target": "target-03-api", "rule": "dockerfile.security.missing-user", "severity": "critical", "file": "Dockerfile", "line": 10},
+      {"target": "target-03-api", "rule": "python.jwt.security.jwt-hardcode", "severity": "critical", "file": "server.py", "line": 75},
+      {"target": "target-03-api", "rule": "python.jwt.security.jwt-none-alg", "severity": "critical", "file": "server.py", "line": 92},
+      {"target": "target-03-api", "rule": "python.jwt.security.jwt-none-alg", "severity": "critical", "file": "server.py", "line": 116},
+      {"target": "target-03-api", "rule": "python.jwt.security.jwt-none-alg", "severity": "critical", "file": "server.py", "line": 136},
+      {"target": "target-03-api", "rule": "python.flask.security.audit.render-template-string", "severity": "high", "file": "server.py", "line": 156},
+      {"target": "target-03-api", "rule": "python.flask.security.audit.app-run-param-config", "severity": "high", "file": "server.py", "line": 190},
+      {"target": "target-03-api", "rule": "python.flask.security.audit.debug-enabled", "severity": "high", "file": "server.py", "line": 190}
+    ]
+  },
+  "llm": {
+    "model": "Qwen2.5-Coder-0.5B-Instruct",
+    "available": true,
+    "payloads_generated": true
+  },
+  "expected_flags": ["flag{web_master}", "flag{ssh_ghost}", "flag{api_breaker}", "flag{deep_vault}", "flag{halctf_king}"]
+}

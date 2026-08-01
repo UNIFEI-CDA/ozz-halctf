@@ -7,14 +7,15 @@
 #   10.0.0.30 — Flask API (SSTI, JWT)   → flag{api_breaker}
 #   10.0.0.40 — MySQL (interno)         → flag{deep_vault} + flag{halctf_king}
 #
-# Start: docker-compose up --build
-# Stop:  docker-compose down -v
+# Start: docker compose up --build
+# Stop:  docker compose down -v
 
 version: "3.8"
 
 networks:
   ctf-net:
     driver: bridge
+    internal: true   # ← BLOCKS all external/internet access
     ipam:
       config:
         - subnet: 10.0.0.0/24
@@ -28,8 +29,6 @@ services:
     networks:
       ctf-net:
         ipv4_address: 10.0.0.10
-    ports:
-      - "8081:80"
 
   # === TARGET-02: SSH + Samba (Credenciais Fracas) ===
   target-02:
@@ -39,9 +38,6 @@ services:
     networks:
       ctf-net:
         ipv4_address: 10.0.0.20
-    ports:
-      - "2222:22"
-      - "4455:445"
 
   # === TARGET-03: Flask API (SSTI + JWT Bypass) ===
   target-03:
@@ -51,8 +47,6 @@ services:
     networks:
       ctf-net:
         ipv4_address: 10.0.0.30
-    ports:
-      - "5000:5000"
 
   # === TARGET-04: MySQL Interno (Apenas via rede interna) ===
   target-04:
@@ -62,38 +56,16 @@ services:
     networks:
       ctf-net:
         ipv4_address: 10.0.0.40
-    # Sem portas externas — só acessível pela rede interna
     environment:
       - MYSQL_ROOT_PASSWORD=MySQL_R00t_2026!
 
   # === SCOREBOARD ===
   scoreboard:
-    image: python:3.11-slim
+    build: ./scoreboard
     container_name: scoreboard
+    hostname: scoreboard
     networks:
       ctf-net:
         ipv4_address: 10.0.0.200
     ports:
       - "9090:9090"
-    volumes:
-      - ./scoreboard:/app
-    working_dir: /app
-    command: python3 server.py
-
-  # === OZZ AGENT ===
-  # Descomente para rodar o agente automaticamente
-  # ozz:
-  #   build: ../  # Dockerfile do agente na raiz do projeto
-  #   container_name: ozz-agent
-  #   networks:
-  #     ctf-net:
-  #       ipv4_address: 10.0.0.100
-  #   environment:
-  #     - TARGETS=10.0.0.10,10.0.0.20,10.0.0.30
-  #     - MODEL_NAME=Qwen/Qwen2.5-Coder-7B-Instruct
-  #   runtime: nvidia
-  #   depends_on:
-  #     - target-01
-  #     - target-02
-  #     - target-03
-  #     - target-04

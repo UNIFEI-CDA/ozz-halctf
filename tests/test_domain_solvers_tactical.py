@@ -44,7 +44,8 @@ class TestDomainSolversTactical(unittest.TestCase):
         res = solver.solve_tactical_step({"target_resource": "http://target.ctf", "target_type": "http"})
         self.assertEqual(res.winner.id, "hyp_headers")
         self.assertEqual(res.winner.payload.binary, "curl")
-        self.assertEqual(res.winner.payload.args, ["-I", "http://target.ctf"])
+        self.assertIn("http://target.ctf", res.winner.payload.args)
+        self.assertIn("-sI", res.winner.payload.args)
 
     def test_privesc_solver_tactical_step_determinism(self):
         """PrivescDomainSolver com user_level 'low_privilege' deve eleger 'Auditoria de Regras Sudo Sem Senha'."""

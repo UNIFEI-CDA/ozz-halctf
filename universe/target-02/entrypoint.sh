@@ -92,5 +92,8 @@ echo "Samba shares: $(smbclient -L localhost -N 2>/dev/null | grep -i share || e
 EOF
 chmod +x /opt/sysinfo.sh
 
-# Manter serviços rodando
-exec /usr/sbin/sshd && smbd --foreground --no-process-group
+# Start SSH in background, then run Samba in foreground
+/usr/sbin/sshd
+echo "[+] SSH started on port 22"
+echo "[+] Starting Samba..."
+exec smbd --foreground --no-process-group

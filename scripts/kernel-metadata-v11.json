@@ -1,0 +1,14 @@
+{
+  "id": "danielapalma/ozz-qwen7b-v11",
+  "title": "ozz-qwen7b-v11",
+  "code_file": "ozz_qwen7b_v11.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}

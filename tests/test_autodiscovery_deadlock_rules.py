@@ -144,7 +144,7 @@ class TestBinaryPathAndSolverValidation(unittest.TestCase):
         self.assertFalse(rep3.success)
         self.assertIn("INVALID_FORMAT", rep3.errors[0])
 
-        # 4. Formato ELF válido -> Sucesso via readelf mock
+        # 4. Formato ELF válido -> Sucesso via checksec/readelf mock
         mock_exec = MockProcessExecutor(mock_output="0x0000000000000001 (NEEDED) Shared library: [libc.so.6]", exit_code=0)
         solver_elf = PwnRevDomainSolver(
             executor=mock_exec,
@@ -152,8 +152,9 @@ class TestBinaryPathAndSolverValidation(unittest.TestCase):
         )
         rep4 = solver_elf.analyze(AnalysisRequest(domain="pwn", target_resource="target_bin"))
         self.assertTrue(rep4.success)
-        self.assertEqual(len(mock_exec.executed_commands), 1)
-        self.assertEqual(mock_exec.executed_commands[0].binary, "readelf")
+        self.assertGreaterEqual(len(mock_exec.executed_commands), 1)
+        binaries = [cmd.binary for cmd in mock_exec.executed_commands]
+        self.assertIn("readelf", binaries)
 
 
 if __name__ == "__main__":

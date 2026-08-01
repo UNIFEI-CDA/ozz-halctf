@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # 🏴 OZZ — Full Stack (Universe + Agent + LLM)
-# Tudo rodando no mesmo Docker
+# Isolated CTF environment — no internet access
 # ============================================
 
 set -e
@@ -9,12 +9,14 @@ set -e
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${GREEN}"
 echo "  ╔══════════════════════════════════════════╗"
 echo "  ║  🏴 OZZ — FULL STACK LAUNCHER            ║"
 echo "  ║  Universe + Agent + LLM                  ║"
+echo "  ║  Isolated CTF Network                    ║"
 echo "  ╚══════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -27,39 +29,48 @@ if nvidia-smi &> /dev/null; then
     echo -e "${GREEN}  ✅ GPU found: ${GPU_INFO}${NC}"
     HAS_GPU=true
 else
-    echo -e "${YELLOW}  ⚠️  No GPU detected. Agent will run with mock LLM.${NC}"
-    echo -e "${YELLOW}     For real LLM, use Kaggle (scripts/ozz_kaggle.ipynb)${NC}"
+    echo -e "${YELLOW}  ⚠️  No GPU detected. Agent will run with HF Transformers (CPU).${NC}"
     HAS_GPU=false
 fi
 
-# Start universe
+# Start universe (targets + scoreboard)
 echo ""
-echo -e "${CYAN}Starting universe...${NC}"
-cd "$SCRIPT_DIR/universe"
-docker compose up -d --build 2>&1 | tail -3
-sleep 3
+echo -e "${CYAN}Starting universe (targets + scoreboard)...${NC}"
+cd "$SCRIPT_DIR"
+docker compose up -d --build target-01 target-02 target-03 target-04 scoreboard 2>&1 | tail -5
+sleep 5
 
-# Start scoreboard
+# Wait for services
+echo -e "${CYAN}Waiting for services...${NC}"
+for i in $(seq 1 30); do
+    SCOREBOARD_OK=false
+    if curl -sf http://localhost:9090/api/score > /dev/null 2>&1; then
+        SCOREBOARD_OK=true
+    fi
+    echo "  [$i/30] Scoreboard=$SCOREBOARD_OK"
+    if $SCOREBOARD_OK; then
+        break
+    fi
+    sleep 2
+done
+
 echo -e "${GREEN}  ✅ Universe running${NC}"
 echo -e "  📊 Scoreboard: http://localhost:9090"
+echo -e "  🎯 Targets: 10.0.0.10 (Web) | 10.0.0.20 (SSH/SMB) | 10.0.0.30 (API) | 10.0.0.40 (MySQL)"
 
 # Run agent
 echo ""
 if [ "$HAS_GPU" = true ]; then
-    echo -e "${CYAN}Starting agent with GPU (real LLM)...${NC}"
+    echo -e "${CYAN}Starting agent with GPU (vLLM)...${NC}"
     cd "$SCRIPT_DIR"
-    docker build -t ozz:latest . 2>&1 | tail -3
-    docker run --gpus all \
-        --network host \
-        -e TARGETS="10.0.0.10,10.0.0.20,10.0.0.30" \
-        -e MODEL_NAME="Qwen/Qwen2.5-Coder-7B-Instruct" \
-        -v ozz-models:/models \
-        ozz:latest
+    docker compose --profile agent up --build ozz 2>&1
 else
-    echo -e "${CYAN}Running mock agent (no GPU)...${NC}"
+    echo -e "${CYAN}Starting agent (CPU mode — HF Transformers)...${NC}"
     cd "$SCRIPT_DIR"
-    python3 scripts/mock_runner.py --scenario multi_target_parallel --verbose
+    docker compose --profile agent up --build ozz 2>&1
 fi
 
 echo ""
 echo -e "${GREEN}🏴 Done! Check scoreboard: http://localhost:9090${NC}"
+echo -e "${CYAN}Final score:${NC}"
+curl -s http://localhost:9090/api/score | python3 -m json.tool 2>/dev/null || echo "(scoreboard unavailable)"

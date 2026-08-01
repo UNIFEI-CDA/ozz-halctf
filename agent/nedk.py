@@ -357,17 +357,15 @@ class NEDK:
             )
             logger.info(f"📡 NEDK S(t) atualizado via evento CLASS_I: host={host}, ports={list(ports)}")
 
-    def run(self):
+    def run(self, agent=None):
         """
         Main NEDK execution loop.
         Orchestrates OzzAgent through the 4 mathematical spaces.
+        Composes with an existing agent instance (preferred) or creates one.
         """
         if self.dry_run:
             logger.info("NEDK dry_run mode — skipping agent execution")
             return
-
-        from .core import OzzAgent
-        from .llm import LLM
 
         logger.info("🧠 NEDK activating Neural Executive Dynamic Kernel...")
 
@@ -378,8 +376,11 @@ class NEDK:
         control = self.executive.compute_control(self.state)
         logger.info(f"🎯 u_Ω initial: target={control['target']}, phase={control['phase']}")
 
-        # Create and run the agent with NEDK-regulated targets
-        agent = OzzAgent(targets=self.targets, model_path=self.model_path)
+        if agent is None:
+            from .core import OzzAgent
+            agent = OzzAgent(targets=self.targets, model_path=self.model_path, nedk=self)
+
+        # Run the agent
         agent.run()
 
         # Post-execution: harvest results from agent into S(t)

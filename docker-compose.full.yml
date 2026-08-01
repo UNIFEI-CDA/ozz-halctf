@@ -1,14 +1,15 @@
-# Ozz — Full Stack: Universe + Agent
-# docker compose up --build
+# Ozz — Full Stack: Universe + Agent + LLM
+# Isolated CTF network — no internet access
 #
-# Com GPU: roda o agente com LLM real
-# Sem GPU: roda o agente com mock LLM
+# Usage:
+#   docker compose -f docker-compose.full.yml up --build
 
 version: "3.8"
 
 networks:
   ctf-net:
     driver: bridge
+    internal: true   # ← BLOCKS all external/internet access
     ipam:
       config:
         - subnet: 10.0.0.0/24
@@ -22,8 +23,6 @@ services:
     networks:
       ctf-net:
         ipv4_address: 10.0.0.10
-    ports:
-      - "8081:80"
 
   target-02:
     build: ./universe/target-02
@@ -32,9 +31,6 @@ services:
     networks:
       ctf-net:
         ipv4_address: 10.0.0.20
-    ports:
-      - "2222:22"
-      - "4455:445"
 
   target-03:
     build: ./universe/target-03
@@ -43,8 +39,6 @@ services:
     networks:
       ctf-net:
         ipv4_address: 10.0.0.30
-    ports:
-      - "5000:5000"
 
   target-04:
     build: ./universe/target-04
@@ -54,25 +48,20 @@ services:
       ctf-net:
         ipv4_address: 10.0.0.40
     environment:
-      - MYSQL_ROOT_PASSWORD=***
+      - MYSQL_ROOT_PASSWORD=MySQL_R00t_2026!
 
   # === SCOREBOARD ===
   scoreboard:
-    image: python:3.11-slim
+    build: ./universe/scoreboard
     container_name: scoreboard
+    hostname: scoreboard
     networks:
       ctf-net:
         ipv4_address: 10.0.0.200
     ports:
       - "9090:9090"
-    volumes:
-      - ./universe/scoreboard:/app
-    working_dir: /app
-    command: python3 server.py
 
   # === OZZ AGENT ===
-  # Uncomment below to run agent automatically
-  # Requires GPU: docker compose --profile agent up --build
   ozz:
     build: .
     container_name: ozz-agent
@@ -82,10 +71,12 @@ services:
       ctf-net:
         ipv4_address: 10.0.0.100
     environment:
-      - TARGETS=10.0.0.10,10.0.0.20,10.0.0.30
+      - NVIDIA_VISIBLE_DEVICES=all
+      - TARGETS=10.0.0.10,10.0.0.20,10.0.0.30,10.0.0.40
       - MODEL_NAME=Qwen/Qwen2.5-Coder-7B-Instruct
       - GPU_MEMORY_UTILIZATION=0.85
       - MAX_MODEL_LEN=8192
+      - SCOREBOARD_URL=http://10.0.0.200:9090
     volumes:
       - ozz-models:/models
     deploy:
@@ -100,6 +91,7 @@ services:
       - target-02
       - target-03
       - target-04
+      - scoreboard
 
 volumes:
   ozz-models:

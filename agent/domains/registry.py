@@ -33,7 +33,7 @@ class DomainSolverRegistry:
         import importlib
         import pkgutil
         import sys
-        modules_to_load = ["web", "privesc", "forensics", "pwn_rev", "crypto"]
+        modules_to_load = ["web", "privesc", "forensics", "pwn_rev", "crypto", "code_assist", "ml_supply"]
         for mod in modules_to_load:
             full_name = f"{package_name}.{mod}"
             try:

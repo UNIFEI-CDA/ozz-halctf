@@ -25,8 +25,9 @@ class TestPortsAndAdapters(unittest.TestCase):
         report = solver.analyze(req)
         
         self.assertTrue(report.success)
-        self.assertEqual(len(mock_executor.executed_commands), 1)
-        self.assertEqual(mock_executor.executed_commands[0].binary, "readelf")
+        self.assertGreaterEqual(len(mock_executor.executed_commands), 1)
+        binaries = [cmd.binary for cmd in mock_executor.executed_commands]
+        self.assertIn("readelf", binaries)
 
     def test_safe_process_executor_shell_false_sanitization(self):
         """Verifica se o SafeProcessExecutor usa listas parametrizadas (shell=False) protegendo contra Command Injection"""

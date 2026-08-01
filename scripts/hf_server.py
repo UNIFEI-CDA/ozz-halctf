@@ -13,7 +13,7 @@ import uvicorn
 
 app = FastAPI(title="Ozz Resilient LLM Server")
 
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-Coder-3B-Instruct")
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-Coder-7B-Instruct")
 CACHE_DIR = os.environ.get("HF_HOME", "/tmp/hf_cache")
 PORT = int(os.environ.get("VLLM_PORT", os.environ.get("PORT", "8000")))
 
@@ -28,8 +28,9 @@ try:
         MODEL_NAME,
         cache_dir=CACHE_DIR,
         torch_dtype=dtype,
-        device_map=current_device,
-        trust_remote_code=True
+        device_map="auto" if current_device == "cuda" else "cpu",
+        trust_remote_code=True,
+        low_cpu_mem_usage=True
     )
     print(f"✅ Model loaded successfully on device: {current_device}!")
 except Exception as e:
@@ -40,7 +41,8 @@ except Exception as e:
         cache_dir=CACHE_DIR,
         torch_dtype=torch.float32,
         device_map="cpu",
-        trust_remote_code=True
+        trust_remote_code=True,
+        low_cpu_mem_usage=True
     )
     print("✅ Model loaded in CPU Fallback mode successfully!")
 

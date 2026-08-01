@@ -55,3 +55,4 @@ htmlcov/
 # Kaggle temporary outputs
 kaggle_*/
 
+.openclaw

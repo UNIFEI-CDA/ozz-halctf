@@ -1,30 +1,88 @@
 #!/bin/bash
-# Ozz — Docker Entrypoint
-# Starts vLLM model server and the agent
+# Ozz — Docker Entrypoint (DEF CON 34 HALctf Edition)
+# Starts vLLM model server and the autonomous agent
+# Handles signals properly for clean container shutdown
 
-set -e
+set -euo pipefail
 
-# Configuration
+# ─── Configuration ───────────────────────────────────────────────
 MODEL_PATH="${MODEL_PATH:-/models}"
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen2.5-Coder-7B-Instruct}"
 VLLM_PORT="${VLLM_PORT:-8000}"
 GPU_MEMORY_UTILIZATION="${GPU_MEMORY_UTILIZATION:-0.85}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 TENSOR_PARALLEL_SIZE="${TENSOR_PARALLEL_SIZE:-1}"
+LOG_DIR="${LOG_DIR:-/tmp/ozz}"
+MAX_RUNTIME="${MAX_RUNTIME:-28800}"
+STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-300}"
 
+mkdir -p "$LOG_DIR"
+
+VLLM_PID=""
+CURRENT_SERVER=""
+AGENT_EXIT_CODE=0
+
+# ─── Signal Handling ─────────────────────────────────────────────
+cleanup() {
+    echo ""
+    echo "🛑 Shutting down (signal received)..."
+    if [ -n "$VLLM_PID" ] && kill -0 "$VLLM_PID" 2>/dev/null; then
+        echo "  Stopping $CURRENT_SERVER (PID $VLLM_PID)..."
+        kill -TERM "$VLLM_PID" 2>/dev/null || true
+        for i in $(seq 1 10); do
+            kill -0 "$VLLM_PID" 2>/dev/null || break
+            sleep 1
+        done
+        kill -9 "$VLLM_PID" 2>/dev/null || true
+    fi
+    echo "👋 Done."
+    exit "${AGENT_EXIT_CODE:-0}"
+}
+trap cleanup SIGTERM SIGINT SIGHUP
+
+# ─── Banner ──────────────────────────────────────────────────────
 echo "🏴 =========================================="
 echo "  OZZ — HALctf Autonomous Pentesting Agent"
 echo "  DEF CON 34 AI Village"
 echo "=========================================="
 echo ""
-echo "Model: $MODEL_NAME"
-echo "Path: $MODEL_PATH"
-echo "Port: $VLLM_PORT"
-echo "GPU Memory: $GPU_MEMORY_UTILIZATION"
-echo "Max Model Length: $MAX_MODEL_LEN"
+echo "Model:       $MODEL_NAME"
+echo "Path:        $MODEL_PATH"
+echo "Port:        $VLLM_PORT"
+echo "GPU Mem:     $GPU_MEMORY_UTILIZATION"
+echo "Max Len:     $MAX_MODEL_LEN"
+echo "Timeout:     ${STARTUP_TIMEOUT}s"
+echo "Max Runtime: ${MAX_RUNTIME}s ($((MAX_RUNTIME / 3600))h)"
+echo "Log Dir:     $LOG_DIR"
 echo ""
 
-# Start vLLM server in background
+# Auto-discover targets if not specified
+if [ -z "${TARGETS:-}" ]; then
+    echo "🔍 No TARGETS specified, will auto-discover from network..."
+fi
+
+# ─── Wait for Model Server ───────────────────────────────────────
+wait_for_server() {
+    local url="http://localhost:$VLLM_PORT/v1/models"
+    local max_wait=$1
+    local waited=0
+
+    while [ $waited -lt $max_wait ]; do
+        if curl -sf "$url" > /dev/null 2>&1; then
+            echo "✅ Model server ready! (${waited}s)"
+            return 0
+        fi
+        sleep 2
+        waited=$((waited + 2))
+        if [ $((waited % 20)) -eq 0 ]; then
+            echo "  Waiting... ($waited/${max_wait}s)"
+        fi
+    done
+
+    return 1
+}
+
+# ─── Start vLLM ──────────────────────────────────────────────────
 echo "🚀 Starting vLLM server..."
 python -m vllm.entrypoints.openai.api_server \
     --model "$MODEL_NAME" \
@@ -37,38 +95,55 @@ python -m vllm.entrypoints.openai.api_server \
     --trust-remote-code \
     --dtype auto \
     --enforce-eager \
-    &
-
+    --max-num-seqs 4 \
+    --swap-space 4 \
+    > "$LOG_DIR/vllm.log" 2>&1 &
 VLLM_PID=$!
+CURRENT_SERVER="vllm"
 
-# Wait for vLLM to be ready
-echo "⏳ Waiting for model server..."
-MAX_WAIT=300
-WAITED=0
-while [ $WAITED -lt $MAX_WAIT ]; do
-    if curl -s http://localhost:$VLLM_PORT/v1/models > /dev/null 2>&1; then
-        echo "✅ Model server ready!"
-        break
+echo "⏳ Waiting for model server (up to ${STARTUP_TIMEOUT}s)..."
+
+# ─── Fallback to HF Server if vLLM fails ─────────────────────────
+if ! wait_for_server "$STARTUP_TIMEOUT"; then
+    echo "⚠️  vLLM server failed to start within ${STARTUP_TIMEOUT}s"
+
+    # Kill the failed vLLM process
+    if kill -0 "$VLLM_PID" 2>/dev/null; then
+        kill -TERM "$VLLM_PID" 2>/dev/null || true
+        sleep 2
+        kill -9 "$VLLM_PID" 2>/dev/null || true
     fi
-    sleep 2
-    WAITED=$((WAITED + 2))
-    echo "  Waiting... ($WAITED/${MAX_WAIT}s)"
-done
 
-if [ $WAITED -ge $MAX_WAIT ]; then
-    echo "❌ Model server failed to start within ${MAX_WAIT}s"
-    kill $VLLM_PID 2>/dev/null
-    exit 1
+    echo "🔁 Starting fallback HF Transformers server..."
+    python /app/scripts/hf_server.py > "$LOG_DIR/hf_server.log" 2>&1 &
+    VLLM_PID=$!
+    CURRENT_SERVER="hf_server"
+
+    if ! wait_for_server "$STARTUP_TIMEOUT"; then
+        echo "❌ Fallback HF server also failed within ${STARTUP_TIMEOUT}s"
+        echo "❌ Cannot start agent without a model server."
+        kill -9 "$VLLM_PID" 2>/dev/null || true
+        exit 1
+    fi
 fi
 
-# Run the agent
+# ─── Run Agent ───────────────────────────────────────────────────
 echo ""
 echo "🏴 Starting Ozz agent..."
 echo "=========================================="
-python -m agent "$@"
 
-# Cleanup
-echo "🛑 Shutting down..."
-kill $VLLM_PID 2>/dev/null
-wait $VLLM_PID 2>/dev/null
-echo "👋 Done."
+set +e
+python -m agent "$@" 2>&1 | tee "$LOG_DIR/agent.log"
+AGENT_EXIT_CODE=${PIPESTATUS[0]}
+set -e
+
+# ─── Final Report ────────────────────────────────────────────────
+echo ""
+echo "📊 Final Metrics:"
+echo "  Exit code: $AGENT_EXIT_CODE"
+echo "  Runtime: $SECONDS seconds"
+if [ -f "$LOG_DIR/ozz_final_report.json" ]; then
+    echo "  Report: $(cat "$LOG_DIR/ozz_final_report.json" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Flags: {d.get(\"total_flags\",0)}, Rounds: {d.get(\"total_rounds\",0)}')" 2>/dev/null || echo "see log file")"
+fi
+
+cleanup

@@ -1,0 +1,321 @@
+{
+  "pipeline": "OZZ + RAPTOR v3",
+  "timestamp": "2026-07-29T11:15:00",
+  "environment": {
+    "platform": "Kaggle (CPU)",
+    "model": "None (static analysis only)",
+    "runtime_seconds": 120,
+    "kaggle_kernel": "danielapalma/ozz-raptor-v3"
+  },
+  "raptor": {
+    "tool": "Semgrep (auto + OWASP Top 10 + Security Audit)",
+    "total_findings": 26,
+    "by_severity": {
+      "critical": 20,
+      "high": 6,
+      "medium": 0,
+      "low": 0
+    },
+    "findings": [
+      {
+        "source": "raptor_semgrep",
+        "target": "target-01-web",
+        "rule_id": "dockerfile.security.missing-user.missing-user",
+        "severity": "critical",
+        "message": "By not specifying a USER, a program in the container may run as 'root'. This is a security hazard.",
+        "file": "universe/target-01/Dockerfile",
+        "line": 16
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-01-web",
+        "rule_id": "php.lang.security.injection.tainted-sql-string.tainted-sql-string",
+        "severity": "critical",
+        "message": "User data flows into this manually-constructed SQL string. User data can be safely inserted into SQL strings using prepared statements.",
+        "file": "universe/target-01/app/index.php",
+        "line": 53
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-01-web",
+        "rule_id": "php.lang.security.injection.echoed-request.echoed-request",
+        "severity": "critical",
+        "message": "Echo'ing user input risks cross-site scripting vulnerability. You should use htmlentities() when printing user-controlled data.",
+        "file": "universe/target-01/app/index.php",
+        "line": 58
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-01-web",
+        "rule_id": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "severity": "high",
+        "message": "File name based on user input risks server-side request forgery.",
+        "file": "universe/target-01/app/index.php",
+        "line": 107
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "dockerfile.security.missing-user.missing-user",
+        "severity": "critical",
+        "message": "By not specifying a USER, a program in the container may run as 'root'. This is a security hazard.",
+        "file": "universe/target-03/Dockerfile",
+        "line": 10
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret",
+        "severity": "critical",
+        "message": "Hardcoded JWT secret or private key is used. This is a Insufficiently Protected Credentials weakness.",
+        "file": "universe/target-03/app/server.py",
+        "line": 75
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "python.jwt.security.jwt-none-alg.jwt-python-none-alg",
+        "severity": "critical",
+        "message": "Detected use of the 'none' algorithm in a JWT token. The 'none' algorithm assumes the integrity of the token.",
+        "file": "universe/target-03/app/server.py",
+        "line": 92
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "python.jwt.security.jwt-none-alg.jwt-python-none-alg",
+        "severity": "critical",
+        "message": "Detected use of the 'none' algorithm in a JWT token.",
+        "file": "universe/target-03/app/server.py",
+        "line": 116
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "python.jwt.security.jwt-none-alg.jwt-python-none-alg",
+        "severity": "critical",
+        "message": "Detected use of the 'none' algorithm in a JWT token.",
+        "file": "universe/target-03/app/server.py",
+        "line": 136
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "python.flask.security.audit.render-template-string.render-template-string",
+        "severity": "high",
+        "message": "Found a template created with string formatting. This is susceptible to server-side template injection.",
+        "file": "universe/target-03/app/server.py",
+        "line": 156
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host",
+        "severity": "high",
+        "message": "Running flask app with host 0.0.0.0 could expose the server publicly.",
+        "file": "universe/target-03/app/server.py",
+        "line": 190
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "target-03-api",
+        "rule_id": "python.flask.security.audit.debug-enabled.debug-enabled",
+        "severity": "high",
+        "message": "Detected Flask app with debug=True. Do not deploy to production with this flag enabled.",
+        "file": "universe/target-03/app/server.py",
+        "line": 190
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "python.lang.security.audit.non-literal-import.non-literal-import",
+        "severity": "high",
+        "message": "Untrusted user input in importlib.import_module() function allows an attacker to load arbitrary code.",
+        "file": "agent/domains/registry.py",
+        "line": 43
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "generic.secrets.security.detected-ssh-password.detected-ssh-password",
+        "severity": "critical",
+        "message": "SSH Password detected",
+        "file": "agent/edge_cases.py",
+        "line": 33
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "generic.secrets.security.detected-jwt-token.detected-jwt-token",
+        "severity": "critical",
+        "message": "JWT token detected",
+        "file": "agent/edge_cases.py",
+        "line": 37
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "generic.secrets.security.detected-ssh-password.detected-ssh-password",
+        "severity": "critical",
+        "message": "SSH Password detected",
+        "file": "agent/edge_cases.py",
+        "line": 58
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "generic.ci.security.bash-reverse-shell.bash_reverse_shell",
+        "severity": "critical",
+        "message": "Semgrep found a bash reverse shell",
+        "file": "agent/exploits.py",
+        "line": 71
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+        "severity": "critical",
+        "message": "Found subprocess function 'run' with 'shell=True'. This is dangerous because this call will spawn a command using a shell process.",
+        "file": "agent/exploits.py",
+        "line": 394
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+        "severity": "critical",
+        "message": "Found subprocess function 'run' with 'shell=True'.",
+        "file": "agent/exploits.py",
+        "line": 404
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "generic.secrets.security.detected-ssh-password.detected-ssh-password",
+        "severity": "critical",
+        "message": "SSH Password detected",
+        "file": "agent/few_shot.py",
+        "line": 136
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "generic.secrets.security.detected-ssh-password.detected-ssh-password",
+        "severity": "critical",
+        "message": "SSH Password detected",
+        "file": "agent/few_shot.py",
+        "line": 231
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "generic.secrets.security.detected-ssh-password.detected-ssh-password",
+        "severity": "critical",
+        "message": "SSH Password detected",
+        "file": "agent/few_shot.py",
+        "line": 250
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "python.lang.security.audit.formatted-sql-query.formatted-sql-query",
+        "severity": "high",
+        "message": "Detected possible formatted SQL query. Use parameterized queries instead.",
+        "file": "agent/memory.py",
+        "line": 296
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query",
+        "severity": "critical",
+        "message": "Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL injection.",
+        "file": "agent/memory.py",
+        "line": 296
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+        "severity": "critical",
+        "message": "Found subprocess function 'Popen' with 'shell=True'.",
+        "file": "agent/recon_adapter/invoker.py",
+        "line": 6
+      },
+      {
+        "source": "raptor_semgrep",
+        "target": "agent-core",
+        "rule_id": "python.lang.security.audit.subprocess-shell-true.subprocess-shell-true",
+        "severity": "critical",
+        "message": "Found subprocess function 'run' with 'shell=True'.",
+        "file": "agent/tools.py",
+        "line": 234
+      }
+    ]
+  },
+  "ozz": {
+    "attack_techniques": 7,
+    "techniques": [
+      {"technique": "SQL Injection", "source": "attack.py analysis"},
+      {"technique": "LFI", "source": "attack.py analysis"},
+      {"technique": "Credential Stuffing", "source": "attack.py analysis"},
+      {"technique": "SSTI", "source": "attack.py analysis"},
+      {"technique": "JWT Bypass", "source": "attack.py analysis"},
+      {"technique": "Samba Exploit", "source": "attack.py analysis"},
+      {"technique": "Command Injection", "source": "attack.py analysis"}
+    ],
+    "expected_flags": [
+      "flag{web_master}",
+      "flag{ssh_ghost}",
+      "flag{api_breaker}",
+      "flag{deep_vault}",
+      "flag{halctf_king}"
+    ],
+    "targets": [
+      "http://localhost:8081/?page=login",
+      "http://localhost:8081/?page=dashboard&action=view_secrets",
+      "http://localhost:8081/?page=reports&file=/var/secret/flag.txt",
+      "http://localhost:8081/?page=debug",
+      "http://localhost:5000/",
+      "http://localhost:5000/auth/login",
+      "http://localhost:5000/admin/secrets",
+      "http://localhost:5000/render",
+      "http://localhost:9090"
+    ]
+  },
+  "correlation": {
+    "correlated_findings": 5,
+    "details": [
+      {
+        "rule_id": "python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret",
+        "ozz_technique": "Credential Stuffing",
+        "file": "universe/target-03/app/server.py",
+        "line": 75
+      },
+      {
+        "rule_id": "python.jwt.security.jwt-none-alg.jwt-python-none-alg",
+        "ozz_technique": "JWT Bypass",
+        "file": "universe/target-03/app/server.py",
+        "line": 92
+      },
+      {
+        "rule_id": "python.jwt.security.jwt-none-alg.jwt-python-none-alg",
+        "ozz_technique": "JWT Bypass",
+        "file": "universe/target-03/app/server.py",
+        "line": 116
+      },
+      {
+        "rule_id": "python.jwt.security.jwt-none-alg.jwt-python-none-alg",
+        "ozz_technique": "JWT Bypass",
+        "file": "universe/target-03/app/server.py",
+        "line": 136
+      },
+      {
+        "rule_id": "generic.secrets.security.detected-jwt-token.detected-jwt-token",
+        "ozz_technique": "JWT Bypass",
+        "file": "agent/edge_cases.py",
+        "line": 37
+      }
+    ]
+  }
+}

@@ -1,5 +1,4 @@
 <?php
-<?php
 // TARGET-01: Web Vulnerável (DVWA-like)
 // Vulns: LFI, SQLi no login
 // Flag: flag{web_master} em /var/secret/flag.txt
